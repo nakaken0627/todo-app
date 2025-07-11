@@ -1,0 +1,29 @@
+# Visual Studio Code
+.vscode/
+
+# Visual Studio / .NET Specific (C# backend)
+backend/bin/
+backend/obj/
+
+# NuGet packages
+packages/
+
+# ASP.NET Core specific
+appsettings.Development.json # 開発固有の設定で、機密情報が含まれる可能性がある場合
+
+# Node.js / React Specific (frontend)
+frontend/node_modules/
+frontend/.next/ # Next.js のビルド出力
+frontend/out/   # Next.js の静的エクスポート出力 (SSGの場合)
+frontend/build/ # Create React App など他のツールのビルド出力
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
+frontend/.env               # 環境変数ファイル (本番環境の機密情報は含めない)
+frontend/.env.local         # Next.js のローカル環境変数 (機密情報が含まれる可能性)
+frontend/.env.development.local
+frontend/.env.test.local
+frontend/.env.production.local
+
+# Operating System specific
+.DS_Store         
