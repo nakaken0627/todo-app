@@ -9,7 +9,9 @@ backend/obj/
 packages/
 
 # ASP.NET Core specific
-appsettings.Development.json # 開発固有の設定で、機密情報が含まれる可能性がある場合
+backend/appsettings.Development.json
+backend/appsettings.Production.json
+backend/appsettings.Staging.json
 
 # Node.js / React Specific (frontend)
 frontend/node_modules/
