@@ -1,21 +1,31 @@
+using Microsoft.EntityFrameworkCore;
+using backend.Data; 
+using NSwag.AspNetCore;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-builder.Services.AddOpenApi();
+builder.Services.AddDbContext<ApplicationDbContext>(options =>
+{
+    // Npgsql (PostgreSQL用プロバイダー) を使用して接続
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"));
+});
+
 
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+
+builder.Services.AddOpenApiDocument(options =>
+{
+    options.Title = "ToDo API";
+    options.Version = "v1";
+});
 
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
-    app.MapOpenApi();
-
-    app.UseSwagger();
-    app.UseSwaggerUI();
-
+    app.UseOpenApi(); 
+    app.UseSwaggerUi();
 }
 
 app.UseHttpsRedirection();
