@@ -56,6 +56,9 @@ public class TodoItemsController : ControllerBase
   //　Todoアイテムを更新する際にアイテムの存在を確認し、エラーハンドリングを分岐させるために必要
   private bool TodoItemExists(int id) { return _context.TodoItems.Any(e => e.Id == id); }
 
+
+  // Todoアイテムを更新し、最新版のデータを返すエンドポイント
+  // コンフリクト発生時はエラーハンドリンで対応可能
   [HttpPut("{id}")]
   public async Task<IActionResult> PutTodoItem(int id, [FromBody] TodoItem todoItem)
   {
@@ -72,5 +75,16 @@ public class TodoItemsController : ControllerBase
       if (!TodoItemExists(id)) return NotFound();
       else throw;
     }
+  }
+
+  // Todoアイテムを削除するエンドポイント
+  [HttpDelete("{id}")]
+  public async Task<IActionResult> DeleteTodoItem(int id)
+  {
+    var todoItem = await _context.TodoItems.FindAsync(id);
+    if (todoItem == null) return NotFound();
+    _context.TodoItems.Remove(todoItem);
+    await _context.SaveChangesAsync();
+    return NoContent();
   }
 }
