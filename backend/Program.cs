@@ -36,7 +36,7 @@ app.UseCors();
 // Swagger/OpenAPIなどのミドルウェアを開発環境でのみ有効化
 if (app.Environment.IsDevelopment())
 {
-    app.UseDeveloperExceptionPage(); // 開発環境でのみエラーページを有効化    
+    app.UseDeveloperExceptionPage();    
     app.UseOpenApi();
     app.UseSwaggerUi();
 }
