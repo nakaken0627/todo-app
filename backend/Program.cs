@@ -13,6 +13,8 @@ builder.Services.AddCors(options =>
 
 });
 
+builder.Services.AddControllers();
+
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
 {
     // Npgsql (PostgreSQL用プロバイダー) を使用して接続
@@ -31,15 +33,18 @@ var app = builder.Build();
 
 app.UseCors();
 
-// Configure the HTTP request pipeline.
+// Swagger/OpenAPIなどのミドルウェアを開発環境でのみ有効化
 if (app.Environment.IsDevelopment())
 {
+    app.UseDeveloperExceptionPage(); // 開発環境でのみエラーページを有効化    
     app.UseOpenApi();
     app.UseSwaggerUi();
 }
+else
+{
+    app.UseExceptionHandler("/error"); // 本番環境では/errorにリダイレクトする
+}
 
 app.UseHttpsRedirection();
-
 app.MapControllers();
-
 app.Run();
