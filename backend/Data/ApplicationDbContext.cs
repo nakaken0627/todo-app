@@ -48,8 +48,6 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
             // 新規追加 (Added) の場合、作成日時と更新日時を設定
             if (entityEntry.State == EntityState.Added)
             {
-                // C#側で設定したNOW()は、データベースが値を提供するため無視される可能性がありますが、
-                // C#側でも値を設定しておくのが安全です。
                 todoItem.CreatedAt = DateTime.UtcNow;
                 todoItem.UpdatedAt = DateTime.UtcNow;
             }
