@@ -151,6 +151,23 @@ function App() {
     setEditForm({ content: "", dueDate: "" });
   };
 
+  const deleteTodo = async (id: number) => {
+    const response = await fetch(
+      `https://localhost:7027/api/todo-items/${id}`,
+      {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
+    if (!response.ok) {
+      throw new Error("network error");
+    } else {
+      setDisplayTodos((prev) => prev.filter((todo) => todo.id !== id));
+    }
+  };
+
   return (
     <div>
       <form onSubmit={handleSubmitForAdd}>
@@ -178,6 +195,10 @@ function App() {
           <button type="submit">確定</button>
         </div>
       </form>
+
+      <button onClick={() => fetchTodos()}>全件</button>
+      <button onClick={() => fetchTodos(true)}>完了</button>
+      <button onClick={() => fetchTodos(false)}>未完了</button>
       <div>
         {displayTodos.length === 0 ? (
           <div>todoが登録されていません</div>
@@ -197,13 +218,10 @@ function App() {
                   : "未設定"}
               </p>
               <button onClick={() => handleSetEditTodo(todo.id)}>編集</button>
+              <button onClick={() => deleteTodo(todo.id)}>削除</button>
             </div>
           ))
         )}
-      </div>
-      <div>
-        <button onClick={() => fetchTodos(true)}>完了</button>
-        <button onClick={() => fetchTodos(false)}>未完了</button>
       </div>
       <div>
         <form onSubmit={(e) => handleSubmitForEdit(e, editingId)}>
