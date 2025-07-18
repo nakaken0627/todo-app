@@ -2,9 +2,10 @@ import { useEffect, useState } from "react";
 import "./App.css";
 
 type Todo = {
-  id: string;
+  id: number;
   content: string;
   dueDate: string;
+  isComplete: boolean;
 };
 type TodoForm = {
   content: string;
@@ -12,20 +13,33 @@ type TodoForm = {
 };
 
 function App() {
-  const [todos, setTodos] = useState<Todo[]>([]);
-  const [form, setForm] = useState<TodoForm>({ content: "", dueDate: "" });
+  const [displayTodos, setDisplayTodos] = useState<Todo[]>([]);
+  const [addForm, setAddForm] = useState<TodoForm>({
+    content: "",
+    dueDate: "",
+  });
+  const [editForm, setEditForm] = useState<TodoForm>({
+    content: "",
+    dueDate: "",
+  });
+  const [editingId, setEditingId] = useState<number>(0);
 
-  const handleForm = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.name === "dueDate" && e.target.value) {
-      const date = new Date(e.target.value);
+  const handleChangeForm = (
+    e: React.ChangeEvent<HTMLInputElement>,
+    currentForm: TodoForm,
+    setForm: React.Dispatch<React.SetStateAction<TodoForm>>
+  ) => {
+    const { name, value } = e.target;
+    if (name === "dueDate" && value) {
+      const date = new Date(value);
       setForm({
-        ...form,
-        [e.target.name]: date.toISOString(),
+        ...currentForm,
+        [name]: date.toISOString(),
       });
     } else {
       setForm({
-        ...form,
-        [e.target.name]: e.target.value,
+        ...currentForm,
+        [name]: value,
       });
     }
   };
@@ -47,8 +61,12 @@ function App() {
       throw new Error("network error");
     }
     const data: Todo[] = await response.json();
-    setTodos(data);
+    setDisplayTodos(data);
   };
+
+  useEffect(() => {
+    fetchTodos();
+  }, []);
 
   const addTodo = async (todo: TodoForm) => {
     const response = await fetch("https://localhost:7027/api/todo-items", {
@@ -62,31 +80,88 @@ function App() {
       throw new Error("network error");
     }
     const data: Todo = await response.json();
-    setTodos((prev) => [...prev, data]);
+    setDisplayTodos((prev) => [...prev, data]);
 
-    setForm({ content: "", dueDate: "" });
+    setAddForm({ content: "", dueDate: "" });
   };
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmitForAdd = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    addTodo(form);
+    addTodo(addForm);
   };
 
-  useEffect(() => {
-    fetchTodos();
-  }, []);
+  const findTodo = (id: number) => {
+    return displayTodos.find((todo) => todo.id === id);
+  };
+
+  const handleChangeStatus = async (id: number) => {
+    const getTodo = findTodo(id);
+    if (!getTodo) return;
+
+    const response = await fetch(
+      `https://localhost:7027/api/todo-items/${id}`,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          ...getTodo,
+          isComplete: !getTodo.isComplete,
+        }),
+      }
+    );
+    const data = await response.json();
+    setDisplayTodos((prev) =>
+      prev.map((todo) => (todo.id === id ? data : todo))
+    );
+  };
+
+  const handleSetEditTodo = async (id: number) => {
+    const getTodo = findTodo(id);
+    if (!getTodo) return;
+    setEditingId(id);
+    setEditForm(getTodo);
+  };
+
+  const editTodo = async (id: number) => {
+    const response = await fetch(
+      `https://localhost:7027/api/todo-items/${id}`,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(editForm),
+      }
+    );
+    const data = await response.json();
+    setDisplayTodos((prev) =>
+      prev.map((todo) => (todo.id === id ? data : todo))
+    );
+  };
+
+  const handleSubmitForEdit = (
+    e: React.FormEvent<HTMLFormElement>,
+    id: number
+  ) => {
+    e.preventDefault();
+    editTodo(id);
+    setEditingId(0);
+    setEditForm({ content: "", dueDate: "" });
+  };
 
   return (
     <div>
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmitForAdd}>
         <div>
           <label htmlFor="content">内容：</label>
           <input
             type="text"
             id="content"
             name="content"
-            value={form.content}
-            onChange={handleForm}
+            value={addForm.content}
+            onChange={(e) => handleChangeForm(e, addForm, setAddForm)}
           />
         </div>
         <div>
@@ -95,8 +170,8 @@ function App() {
             type="date"
             id="dueDate"
             name="dueDate"
-            value={form.dueDate ? form.dueDate.slice(0, 10) : ""} //UTCの形式だとvalueに表示ができないため、Dateの部分だけを切り出す
-            onChange={handleForm}
+            value={addForm.dueDate ? addForm.dueDate.slice(0, 10) : ""} //UTCの形式だとvalueに表示ができないため、Dateの部分だけを切り出す
+            onChange={(e) => handleChangeForm(e, addForm, setAddForm)}
           />
         </div>
         <div>
@@ -104,11 +179,16 @@ function App() {
         </div>
       </form>
       <div>
-        {todos.length === 0 ? (
+        {displayTodos.length === 0 ? (
           <div>todoが登録されていません</div>
         ) : (
-          todos.map((todo) => (
+          displayTodos.map((todo) => (
             <div key={todo.id}>
+              <input
+                type="checkbox"
+                onChange={() => handleChangeStatus(todo.id)}
+                checked={todo.isComplete}
+              />
               <p>内容：{todo.content}</p>
               <p>
                 締切：
@@ -116,6 +196,7 @@ function App() {
                   ? new Date(todo.dueDate).toLocaleDateString()
                   : "未設定"}
               </p>
+              <button onClick={() => handleSetEditTodo(todo.id)}>編集</button>
             </div>
           ))
         )}
@@ -123,6 +204,33 @@ function App() {
       <div>
         <button onClick={() => fetchTodos(true)}>完了</button>
         <button onClick={() => fetchTodos(false)}>未完了</button>
+      </div>
+      <div>
+        <form onSubmit={(e) => handleSubmitForEdit(e, editingId)}>
+          <div>
+            <label htmlFor="content">内容：</label>
+            <input
+              type="text"
+              id="content"
+              name="content"
+              value={editForm?.content}
+              onChange={(e) => handleChangeForm(e, editForm, setEditForm)}
+            />
+          </div>
+          <div>
+            <label htmlFor="deuDate">締切：</label>
+            <input
+              type="date"
+              id="dueDate"
+              name="dueDate"
+              value={editForm.dueDate ? editForm.dueDate.slice(0, 10) : ""} //UTCの形式だとvalueに表示ができないため、Dateの部分だけを切り出す
+              onChange={(e) => handleChangeForm(e, editForm, setEditForm)}
+            />
+          </div>
+          <div>
+            <button type="submit">確定</button>
+          </div>
+        </form>
       </div>
     </div>
   );
