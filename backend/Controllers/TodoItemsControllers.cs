@@ -47,6 +47,7 @@ public class TodoItemsController : ControllerBase
   [HttpPost]
   public async Task<ActionResult<TodoItem>> PostTodoItem([FromBody] TodoItem todoItem)
   {
+  Console.WriteLine("PostTodoItem: " + todoItem);
     if (!ModelState.IsValid) return BadRequest(ModelState);
     _context.TodoItems.Add(todoItem);
     await _context.SaveChangesAsync();
