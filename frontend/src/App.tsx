@@ -9,18 +9,18 @@ type Todo = {
 };
 type TodoForm = {
   content: string;
-  dueDate: string;
+  dueDate: string | null;
 };
 
 function App() {
   const [displayTodos, setDisplayTodos] = useState<Todo[]>([]);
   const [addForm, setAddForm] = useState<TodoForm>({
     content: "",
-    dueDate: "",
+    dueDate: null,
   });
   const [editForm, setEditForm] = useState<TodoForm>({
     content: "",
-    dueDate: "",
+    dueDate: null,
   });
   const [editingId, setEditingId] = useState<number>(0);
 
@@ -31,11 +31,18 @@ function App() {
   ) => {
     const { name, value } = e.target;
     if (name === "dueDate" && value) {
-      const date = new Date(value);
-      setForm({
-        ...currentForm,
-        [name]: date.toISOString(),
-      });
+      if (value) {
+        const date = new Date(value);
+        setForm({
+          ...currentForm,
+          [name]: date.toISOString(),
+        });
+      } else {
+        setForm({
+          ...currentForm,
+          [name]: null,
+        });
+      }
     } else {
       setForm({
         ...currentForm,
@@ -82,7 +89,7 @@ function App() {
     const data: Todo = await response.json();
     setDisplayTodos((prev) => [...prev, data]);
 
-    setAddForm({ content: "", dueDate: "" });
+    setAddForm({ content: "", dueDate: null });
   };
 
   const handleSubmitForAdd = (e: React.FormEvent<HTMLFormElement>) => {
@@ -148,7 +155,7 @@ function App() {
     e.preventDefault();
     editTodo(id);
     setEditingId(0);
-    setEditForm({ content: "", dueDate: "" });
+    setEditForm({ content: "", dueDate: null });
   };
 
   const deleteTodo = async (id: number) => {
@@ -179,6 +186,7 @@ function App() {
             name="content"
             value={addForm.content}
             onChange={(e) => handleChangeForm(e, addForm, setAddForm)}
+            required
           />
         </div>
         <div>
@@ -233,6 +241,7 @@ function App() {
               name="content"
               value={editForm?.content}
               onChange={(e) => handleChangeForm(e, editForm, setEditForm)}
+              required
             />
           </div>
           <div>
