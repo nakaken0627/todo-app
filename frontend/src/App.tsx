@@ -1,10 +1,25 @@
 import { useEffect, useState } from "react";
-import "./App.css";
+import {
+  AppBar,
+  Box,
+  Button,
+  Checkbox,
+  Container,
+  IconButton,
+  List,
+  ListItem,
+  ListItemText,
+  TextField,
+  Toolbar,
+  Typography,
+} from "@mui/material";
+import DeleteIcon from "@mui/icons-material/Delete";
+import EditIcon from "@mui/icons-material/Edit";
 
 type Todo = {
   id: number;
   content: string;
-  dueDate: string;
+  dueDate: string | null;
   isComplete: boolean;
 };
 type TodoForm = {
@@ -22,10 +37,10 @@ function App() {
     content: "",
     dueDate: null,
   });
-  const [editingId, setEditingId] = useState<number>(0);
+  const [editingId, setEditingId] = useState<number | null>(null);
 
   const handleChangeForm = (
-    e: React.ChangeEvent<HTMLInputElement>,
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
     currentForm: TodoForm,
     setForm: React.Dispatch<React.SetStateAction<TodoForm>>
   ) => {
@@ -176,90 +191,180 @@ function App() {
   };
 
   return (
-    <div>
-      <form onSubmit={handleSubmitForAdd}>
-        <div>
-          <label htmlFor="content">内容：</label>
-          <input
-            type="text"
-            id="content"
+    <Box>
+      <AppBar position="static">
+        <Toolbar>
+          <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+            Todoアプリ
+          </Typography>
+        </Toolbar>
+      </AppBar>
+
+      <Container maxWidth="sm" sx={{ mt: 4, mb: 4 }}>
+        <Box
+          component="form"
+          onSubmit={handleSubmitForAdd}
+          sx={{ mt: 4, p: 2, border: "1px solid #ccc", borderRadius: "8px" }}
+        >
+          <Typography variant="h6" gutterBottom>
+            新規登録
+          </Typography>
+
+          <TextField
+            label="内容"
             name="content"
             value={addForm.content}
             onChange={(e) => handleChangeForm(e, addForm, setAddForm)}
+            fullWidth
+            margin="normal"
             required
           />
-        </div>
-        <div>
-          <label htmlFor="deuDate">締切：</label>
-          <input
+          <TextField
+            label="期日"
             type="date"
-            id="dueDate"
             name="dueDate"
             value={addForm.dueDate ? addForm.dueDate.slice(0, 10) : ""} //UTCの形式だとvalueに表示ができないため、Dateの部分だけを切り出す
             onChange={(e) => handleChangeForm(e, addForm, setAddForm)}
+            fullWidth
+            margin="normal"
+            slotProps={{ inputLabel: { shrink: true } }} //ラベルと初期表示が重なるため、ラベルを常時表示
           />
-        </div>
-        <div>
-          <button type="submit">確定</button>
-        </div>
-      </form>
 
-      <button onClick={() => fetchTodos()}>全件</button>
-      <button onClick={() => fetchTodos(true)}>完了</button>
-      <button onClick={() => fetchTodos(false)}>未完了</button>
-      <div>
-        {displayTodos.length === 0 ? (
-          <div>todoが登録されていません</div>
-        ) : (
-          displayTodos.map((todo) => (
-            <div key={todo.id}>
-              <input
-                type="checkbox"
-                onChange={() => handleChangeStatus(todo.id)}
-                checked={todo.isComplete}
-              />
-              <p>内容：{todo.content}</p>
-              <p>
-                締切：
-                {todo.dueDate
-                  ? new Date(todo.dueDate).toLocaleDateString()
-                  : "未設定"}
-              </p>
-              <button onClick={() => handleSetEditTodo(todo.id)}>編集</button>
-              <button onClick={() => deleteTodo(todo.id)}>削除</button>
-            </div>
-          ))
-        )}
-      </div>
-      <div>
-        <form onSubmit={(e) => handleSubmitForEdit(e, editingId)}>
-          <div>
-            <label htmlFor="content">内容：</label>
-            <input
-              type="text"
-              id="content"
+          <Button type="submit" variant="contained" sx={{ mt: 2 }}>
+            確定
+          </Button>
+        </Box>
+
+        <Box sx={{ mb: 3, display: "flex", gap: 1, flexWrap: "wrap" }}>
+          <Button variant="outlined" onClick={() => fetchTodos()}>
+            全件
+          </Button>
+          <Button variant="outlined" onClick={() => fetchTodos(true)}>
+            完了
+          </Button>
+          <Button variant="outlined" onClick={() => fetchTodos(false)}>
+            未完了
+          </Button>
+        </Box>
+        <List
+          sx={{
+            border: "1px solid #eee",
+            borderRadius: "8px",
+            overflow: "hidden",
+          }}
+        >
+          {displayTodos.length === 0 ? (
+            <Typography variant="body1" sx={{ textAlign: "center", p: 2 }}>
+              todoが登録されていません
+            </Typography>
+          ) : (
+            displayTodos.map((todo) => (
+              <ListItem
+                key={todo.id}
+                sx={{
+                  borderBottom: "1px solid #eee",
+                  "&:last-child": { borderBottom: "none" },
+                  display: "flex",
+                  alignItems: "center",
+                  p: 1,
+                }}
+              >
+                <Checkbox
+                  onChange={() => handleChangeStatus(todo.id)}
+                  checked={todo.isComplete}
+                  color="primary"
+                />
+                <ListItemText
+                  primary={
+                    <Typography
+                      variant="body1"
+                      sx={{
+                        textDecoration: todo.isComplete
+                          ? "line-through"
+                          : "none",
+                      }}
+                    >
+                      {todo.content}
+                    </Typography>
+                  }
+                  secondary={
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        color: "text.secondary",
+                      }}
+                    >
+                      期日：{" "}
+                      {todo.dueDate
+                        ? new Date(todo.dueDate).toLocaleDateString()
+                        : " "}
+                    </Typography>
+                  }
+                />
+                <Box sx={{ ml: "auto" }}>
+                  <IconButton></IconButton>
+                  <IconButton onClick={() => handleSetEditTodo(todo.id)}>
+                    <EditIcon />
+                  </IconButton>
+                  <IconButton onClick={() => deleteTodo(todo.id)}>
+                    <DeleteIcon />
+                  </IconButton>
+                </Box>
+              </ListItem>
+            ))
+          )}
+        </List>
+
+        {editingId !== null && (
+          <Box
+            component="form"
+            onSubmit={(e) => handleSubmitForEdit(e, editingId)}
+            sx={{ mt: 4, p: 2, border: "1px solid #ccc", borderRadius: "8px" }}
+          >
+            <Typography variant="h6" gutterBottom>
+              編集
+            </Typography>
+            <TextField
+              label="内容"
               name="content"
               value={editForm?.content}
               onChange={(e) => handleChangeForm(e, editForm, setEditForm)}
+              fullWidth
+              margin="normal"
               required
             />
-          </div>
-          <div>
-            <label htmlFor="deuDate">締切：</label>
-            <input
+            <TextField
+              label="締切"
               type="date"
-              id="dueDate"
               name="dueDate"
               value={editForm.dueDate ? editForm.dueDate.slice(0, 10) : ""} //UTCの形式だとvalueに表示ができないため、Dateの部分だけを切り出す
-              onChange={(e) => handleChangeForm(e, editForm, setEditForm)}
+              onChange={(e) => handleChangeForm(e, addForm, setAddForm)}
+              fullWidth
+              margin="normal"
+              slotProps={{ inputLabel: { shrink: true } }} //ラベルと初期表示が重なるため、ラベルを常時表示
             />
-          </div>
-          <div>
-            <button type="submit">確定</button>
-          </div>
-        </form>
-      </div>
-    </div>
+            <Button
+              type="submit"
+              variant="contained"
+              color="primary"
+              sx={{ mt: 2, mr: 1 }}
+            >
+              保存
+            </Button>
+            <Button
+              onClick={() => {
+                setEditingId(null);
+                setEditForm({ content: "", dueDate: null });
+              }}
+              variant="outlined"
+              sx={{ mt: 2 }}
+            >
+              キャンセル
+            </Button>
+          </Box>
+        )}
+      </Container>
+    </Box>
   );
 }
 
