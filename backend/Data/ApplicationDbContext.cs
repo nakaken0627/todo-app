@@ -17,14 +17,12 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
         .HasDefaultValueSql("NOW()");
     }
 
-     // 同期処理のSaveChanges()をオーバーライド
     public override int SaveChanges()
     {
         UpdateTimestamps();
         return base.SaveChanges();
     }
 
-    // 非同期処理のSaveChangesAsync()をオーバーライド
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
         UpdateTimestamps();
@@ -34,7 +32,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     // エンティティの状態を追跡し、タイムスタンプを更新するプライベートメソッド
     private void UpdateTimestamps()
     {
-        // 変更された、または追加されたエンティティを追跡
+        // 変更または追加されたエンティティを追跡
         var entries = ChangeTracker
             .Entries()
             .Where(e => e.Entity is TodoItem && 
