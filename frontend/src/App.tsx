@@ -5,6 +5,11 @@ import {
   Button,
   Checkbox,
   Container,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  FormControlLabel,
   IconButton,
   List,
   ListItem,
@@ -38,6 +43,9 @@ function App() {
     dueDate: null,
   });
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [isAddModalOpen, setIsAddModalOpen] = useState<boolean>(false);
+  const [isContinueAdd, setIsContinueAdd] = useState<boolean>(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState<boolean>(false);
 
   const handleChangeForm = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
@@ -110,6 +118,7 @@ function App() {
   const handleSubmitForAdd = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     addTodo(addForm);
+    setIsAddModalOpen(isContinueAdd ? true : false);
   };
 
   const findTodo = (id: number) => {
@@ -144,6 +153,7 @@ function App() {
     if (!getTodo) return;
     setEditingId(id);
     setEditForm(getTodo);
+    setIsEditModalOpen(true);
   };
 
   const editTodo = async (id: number) => {
@@ -163,14 +173,13 @@ function App() {
     );
   };
 
-  const handleSubmitForEdit = (
-    e: React.FormEvent<HTMLFormElement>,
-    id: number
-  ) => {
+  const handleSubmitForEdit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    editTodo(id);
-    setEditingId(0);
+    if (editingId === null) return;
+    editTodo(editingId);
+    setEditingId(null);
     setEditForm({ content: "", dueDate: null });
+    setIsEditModalOpen(false);
   };
 
   const deleteTodo = async (id: number) => {
@@ -190,6 +199,11 @@ function App() {
     }
   };
 
+  const handleAddModal = () => setIsAddModalOpen(!isAddModalOpen);
+  const handleContinueAdd = () => setIsContinueAdd(!isContinueAdd);
+
+  const handleEditModal = () => setIsEditModalOpen(!isEditModalOpen);
+
   return (
     <Box>
       <AppBar position="static">
@@ -197,43 +211,78 @@ function App() {
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
             Todoアプリ
           </Typography>
+          <Button color="inherit" onClick={handleAddModal}>
+            新規登録
+          </Button>
         </Toolbar>
       </AppBar>
 
       <Container maxWidth="sm" sx={{ mt: 4, mb: 4 }}>
-        <Box
-          component="form"
-          onSubmit={handleSubmitForAdd}
-          sx={{ mt: 4, p: 2, border: "1px solid #ccc", borderRadius: "8px" }}
-        >
-          <Typography variant="h6" gutterBottom>
+        <Dialog open={isAddModalOpen} onClose={handleAddModal}>
+          <DialogTitle textAlign="center" sx={{ mt: 2 }}>
             新規登録
-          </Typography>
-
-          <TextField
-            label="内容"
-            name="content"
-            value={addForm.content}
-            onChange={(e) => handleChangeForm(e, addForm, setAddForm)}
-            fullWidth
-            margin="normal"
-            required
-          />
-          <TextField
-            label="期日"
-            type="date"
-            name="dueDate"
-            value={addForm.dueDate ? addForm.dueDate.slice(0, 10) : ""} //UTCの形式だとvalueに表示ができないため、Dateの部分だけを切り出す
-            onChange={(e) => handleChangeForm(e, addForm, setAddForm)}
-            fullWidth
-            margin="normal"
-            slotProps={{ inputLabel: { shrink: true } }} //ラベルと初期表示が重なるため、ラベルを常時表示
-          />
-
-          <Button type="submit" variant="contained" sx={{ mt: 2 }}>
-            確定
-          </Button>
-        </Box>
+          </DialogTitle>
+          <DialogContent>
+            <Box
+              component="form"
+              onSubmit={handleSubmitForAdd}
+              sx={{
+                p: 2,
+                border: "1px solid #ccc",
+                borderRadius: "8px",
+              }}
+            >
+              <TextField
+                label="内容"
+                name="content"
+                value={addForm.content}
+                onChange={(e) => handleChangeForm(e, addForm, setAddForm)}
+                fullWidth
+                margin="normal"
+                required
+              />
+              <TextField
+                label="期日"
+                type="date"
+                name="dueDate"
+                value={addForm.dueDate ? addForm.dueDate.slice(0, 10) : ""} //UTCの形式だとvalueに表示ができないため、Dateの部分だけを切り出す
+                onChange={(e) => handleChangeForm(e, addForm, setAddForm)}
+                fullWidth
+                margin="normal"
+                slotProps={{ inputLabel: { shrink: true } }} //ラベルと初期表示が重なるため、ラベルを常時表示
+              />
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={isContinueAdd}
+                      onChange={handleContinueAdd}
+                    />
+                  }
+                  label="連続して登録する"
+                />
+                <DialogActions>
+                  <Button
+                    onClick={handleAddModal}
+                    variant="outlined"
+                    color="primary"
+                  >
+                    キャンセル
+                  </Button>
+                  <Button type="submit" variant="contained" color="primary">
+                    登録
+                  </Button>
+                </DialogActions>
+              </Box>
+            </Box>
+          </DialogContent>
+        </Dialog>
 
         <Box sx={{ mb: 3, display: "flex", gap: 1, flexWrap: "wrap" }}>
           <Button variant="outlined" onClick={() => fetchTodos()}>
@@ -255,7 +304,7 @@ function App() {
         >
           {displayTodos.length === 0 ? (
             <Typography variant="body1" sx={{ textAlign: "center", p: 2 }}>
-              todoが登録されていません
+              該当するtodoがありません
             </Typography>
           ) : (
             displayTodos.map((todo) => (
@@ -316,52 +365,110 @@ function App() {
         </List>
 
         {editingId !== null && (
-          <Box
-            component="form"
-            onSubmit={(e) => handleSubmitForEdit(e, editingId)}
-            sx={{ mt: 4, p: 2, border: "1px solid #ccc", borderRadius: "8px" }}
-          >
-            <Typography variant="h6" gutterBottom>
-              編集
-            </Typography>
-            <TextField
-              label="内容"
-              name="content"
-              value={editForm?.content}
-              onChange={(e) => handleChangeForm(e, editForm, setEditForm)}
-              fullWidth
-              margin="normal"
-              required
-            />
-            <TextField
-              label="締切"
-              type="date"
-              name="dueDate"
-              value={editForm.dueDate ? editForm.dueDate.slice(0, 10) : ""} //UTCの形式だとvalueに表示ができないため、Dateの部分だけを切り出す
-              onChange={(e) => handleChangeForm(e, addForm, setAddForm)}
-              fullWidth
-              margin="normal"
-              slotProps={{ inputLabel: { shrink: true } }} //ラベルと初期表示が重なるため、ラベルを常時表示
-            />
-            <Button
-              type="submit"
-              variant="contained"
-              color="primary"
-              sx={{ mt: 2, mr: 1 }}
-            >
-              保存
-            </Button>
-            <Button
-              onClick={() => {
-                setEditingId(null);
-                setEditForm({ content: "", dueDate: null });
-              }}
-              variant="outlined"
-              sx={{ mt: 2 }}
-            >
-              キャンセル
-            </Button>
-          </Box>
+          <Dialog open={isEditModalOpen} onClose={handleEditModal}>
+            <DialogTitle>編集</DialogTitle>
+            <DialogContent>
+              <Box
+                component="form"
+                onSubmit={handleSubmitForEdit}
+                sx={{
+                  mt: 4,
+                  p: 2,
+                  border: "1px solid #ccc",
+                  borderRadius: "8px",
+                }}
+              >
+                <Typography variant="h6" gutterBottom>
+                  編集
+                </Typography>
+                <TextField
+                  label="内容"
+                  name="content"
+                  value={editForm?.content}
+                  onChange={(e) => handleChangeForm(e, editForm, setEditForm)}
+                  fullWidth
+                  margin="normal"
+                  required
+                />
+                <TextField
+                  label="締切"
+                  type="date"
+                  name="dueDate"
+                  value={editForm.dueDate ? editForm.dueDate.slice(0, 10) : ""} //UTCの形式だとvalueに表示ができないため、Dateの部分だけを切り出す
+                  onChange={(e) => handleChangeForm(e, editForm, setEditForm)}
+                  fullWidth
+                  margin="normal"
+                  slotProps={{ inputLabel: { shrink: true } }} //ラベルと初期表示が重なるため、ラベルを常時表示
+                />
+                <DialogActions>
+                  <Button
+                    type="submit"
+                    variant="contained"
+                    color="primary"
+                    sx={{ mt: 2, mr: 1 }}
+                  >
+                    保存
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      setEditingId(null);
+                      setEditForm({ content: "", dueDate: null });
+                    }}
+                    variant="outlined"
+                    sx={{ mt: 2 }}
+                  >
+                    キャンセル
+                  </Button>
+                </DialogActions>
+              </Box>
+            </DialogContent>
+          </Dialog>
+          // <Box
+          //   component="form"
+          //   onSubmit={(e) => handleSubmitForEdit(e, editingId)}
+          //   sx={{ mt: 4, p: 2, border: "1px solid #ccc", borderRadius: "8px" }}
+          // >
+          //   <Typography variant="h6" gutterBottom>
+          //     編集
+          //   </Typography>
+          //   <TextField
+          //     label="内容"
+          //     name="content"
+          //     value={editForm?.content}
+          //     onChange={(e) => handleChangeForm(e, editForm, setEditForm)}
+          //     fullWidth
+          //     margin="normal"
+          //     required
+          //   />
+          //   <TextField
+          //     label="締切"
+          //     type="date"
+          //     name="dueDate"
+          //     value={editForm.dueDate ? editForm.dueDate.slice(0, 10) : ""} //UTCの形式だとvalueに表示ができないため、Dateの部分だけを切り出す
+          //     onChange={(e) => handleChangeForm(e, editForm, setEditForm)}
+          //     fullWidth
+          //     margin="normal"
+          //     slotProps={{ inputLabel: { shrink: true } }} //ラベルと初期表示が重なるため、ラベルを常時表示
+          //   />
+          //   <Button
+          //     type="submit"
+          //     variant="contained"
+          //     color="primary"
+          //     sx={{ mt: 2, mr: 1 }}
+          //   >
+          //     保存
+          //   </Button>
+          //   <Button
+          //     onClick={() => {
+          //       setEditingId(null);
+          //       setEditForm({ content: "", dueDate: null });
+          //     }}
+          //     variant="outlined"
+          //     sx={{ mt: 2 }}
+          //   >
+          //     キャンセル
+          //   </Button>
+          // </Box>
         )}
       </Container>
     </Box>

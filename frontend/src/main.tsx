@@ -2,10 +2,13 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import { CssBaseline } from "@mui/material";
+import { ThemeRegistry } from "./ThemeRegistry.tsx";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <CssBaseline /> {/*ブラウザ間のスタイルの違いをなくすために使用 */}
-    <App />
+    <ThemeRegistry>
+      <CssBaseline /> {/*ブラウザのスタイルをリセットしMUIのCSSで統一 */}
+      <App />
+    </ThemeRegistry>
   </StrictMode>
 );
