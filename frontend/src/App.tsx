@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   AppBar,
   Box,
@@ -10,16 +10,23 @@ import {
   DialogContent,
   DialogTitle,
   FormControlLabel,
+  Grid,
   IconButton,
   List,
-  ListItem,
-  ListItemText,
+  Paper,
+  styled,
   TextField,
+  ToggleButton,
+  ToggleButtonGroup,
   Toolbar,
   Typography,
 } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
+import AddIcon from "@mui/icons-material/Add";
+import DoneAllIcon from "@mui/icons-material/DoneAll";
+import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
+import RadioButtonUncheckedIcon from "@mui/icons-material/RadioButtonUnchecked";
 
 type Todo = {
   id: number;
@@ -31,6 +38,7 @@ type TodoForm = {
   content: string;
   dueDate: string | null;
 };
+type FilterStatus = "all" | "completed" | "uncompleted";
 
 function App() {
   const [displayTodos, setDisplayTodos] = useState<Todo[]>([]);
@@ -42,10 +50,13 @@ function App() {
     content: "",
     dueDate: null,
   });
+
   const [editingId, setEditingId] = useState<number | null>(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState<boolean>(false);
   const [isContinueAdd, setIsContinueAdd] = useState<boolean>(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState<boolean>(false);
+
+  const [filterStatus, setFilterStatus] = useState<FilterStatus>("all");
 
   const handleChangeForm = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
@@ -53,17 +64,17 @@ function App() {
     setForm: React.Dispatch<React.SetStateAction<TodoForm>>
   ) => {
     const { name, value } = e.target;
-    if (name === "dueDate" && value) {
-      if (value) {
+    if (name === "dueDate") {
+      if (value === "") {
+        setForm({
+          ...currentForm,
+          [name]: null,
+        });
+      } else {
         const date = new Date(value);
         setForm({
           ...currentForm,
           [name]: date.toISOString(),
-        });
-      } else {
-        setForm({
-          ...currentForm,
-          [name]: null,
         });
       }
     } else {
@@ -74,29 +85,36 @@ function App() {
     }
   };
 
-  const fetchTodos = async (isComplete?: boolean) => {
-    const isCompleteParam =
-      isComplete !== undefined ? `?isComplete=${isComplete}` : "";
+  const fetchTodos = useCallback(
+    async (Status: FilterStatus = filterStatus) => {
+      const isCompleteParam =
+        Status === "completed"
+          ? "?isComplete=true"
+          : Status === "uncompleted"
+          ? "?isComplete=false"
+          : "";
 
-    const response = await fetch(
-      `https://localhost:7027/api/todo-items${isCompleteParam}`,
-      {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
+      const response = await fetch(
+        `https://localhost:7027/api/todo-items${isCompleteParam}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      if (!response.ok) {
+        throw new Error("network error");
       }
-    );
-    if (!response.ok) {
-      throw new Error("network error");
-    }
-    const data: Todo[] = await response.json();
-    setDisplayTodos(data);
-  };
+      const data: Todo[] = await response.json();
+      setDisplayTodos(data);
+    },
+    [filterStatus]
+  );
 
   useEffect(() => {
     fetchTodos();
-  }, []);
+  }, [fetchTodos]);
 
   const addTodo = async (todo: TodoForm) => {
     const response = await fetch("https://localhost:7027/api/todo-items", {
@@ -204,34 +222,34 @@ function App() {
 
   const handleEditModal = () => setIsEditModalOpen(!isEditModalOpen);
 
+  const TodoItemPaper = styled(Paper)(({ theme }) => ({
+    marginBottom: theme.spacing(1.5),
+    padding: theme.spacing(1.5, 2),
+    display: "block",
+    alignItems: "center",
+    width: "100%",
+    boxSizing: "border-box",
+  }));
+
   return (
     <Box>
-      <AppBar position="static">
-        <Toolbar>
+      <AppBar position="sticky" color="primary" sx={{ height: 56 }}>
+        <Toolbar sx={{ minHeight: 56, px: 2 }}>
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
             Todoアプリ
           </Typography>
-          <Button color="inherit" onClick={handleAddModal}>
-            新規登録
-          </Button>
         </Toolbar>
       </AppBar>
 
       <Container maxWidth="sm" sx={{ mt: 4, mb: 4 }}>
         <Dialog open={isAddModalOpen} onClose={handleAddModal}>
-          <DialogTitle textAlign="center" sx={{ mt: 2 }}>
-            新規登録
+          <DialogTitle sx={{ textAlign: "center", pb: 1, pt: 3 }}>
+            <Typography variant="h6" component="div">
+              新規登録
+            </Typography>
           </DialogTitle>
-          <DialogContent>
-            <Box
-              component="form"
-              onSubmit={handleSubmitForAdd}
-              sx={{
-                p: 2,
-                border: "1px solid #ccc",
-                borderRadius: "8px",
-              }}
-            >
+          <Box component="form" onSubmit={handleSubmitForAdd}>
+            <DialogContent sx={{ pt: 1 }}>
               <TextField
                 label="内容"
                 name="content"
@@ -265,9 +283,14 @@ function App() {
                       onChange={handleContinueAdd}
                     />
                   }
-                  label="連続して登録する"
+                  label={
+                    <Typography variant="body2" fontWeight={500}>
+                      連続して登録する
+                    </Typography>
+                  }
+                  sx={{ mt: 1, mb: 1 }}
                 />
-                <DialogActions>
+                <DialogActions sx={{ justifyContent: "center", pb: 3, pt: 1 }}>
                   <Button
                     onClick={handleAddModal}
                     variant="outlined"
@@ -280,107 +303,142 @@ function App() {
                   </Button>
                 </DialogActions>
               </Box>
-            </Box>
-          </DialogContent>
+            </DialogContent>
+          </Box>
         </Dialog>
 
-        <Box sx={{ mb: 3, display: "flex", gap: 1, flexWrap: "wrap" }}>
-          <Button variant="outlined" onClick={() => fetchTodos()}>
-            全件
-          </Button>
-          <Button variant="outlined" onClick={() => fetchTodos(true)}>
-            完了
-          </Button>
-          <Button variant="outlined" onClick={() => fetchTodos(false)}>
-            未完了
-          </Button>
+        <Box
+          sx={{
+            mb: 3,
+            // position: "fixed",
+            display: "flex",
+            justifyContent: "center",
+            width: "100%",
+          }}
+        >
+          <ToggleButtonGroup
+            value={filterStatus}
+            exclusive
+            onChange={(_event, selectedStatus) => {
+              if (selectedStatus !== null) {
+                fetchTodos(selectedStatus);
+              }
+              setFilterStatus(selectedStatus);
+            }}
+            aria-label="todo status filter"
+            sx={{
+              display: "flex",
+              justifyContent: "space-between",
+              width: "100%",
+            }}
+          >
+            <ToggleButton
+              value="all"
+              aria-label="all todos"
+              sx={{ flex: 1, minWidth: 0, px: 1 }}
+            >
+              <DoneAllIcon sx={{ mr: 1 }} /> 全て
+            </ToggleButton>
+            <ToggleButton
+              value="completed"
+              aria-label="completed todos"
+              sx={{ flex: 1, minWidth: 0, px: 1 }}
+            >
+              <CheckCircleOutlineIcon sx={{ mr: 1 }} /> 完了
+            </ToggleButton>
+            <ToggleButton
+              value="uncompleted"
+              aria-label="uncompleted todos"
+              sx={{ flex: 1, minWidth: 0, px: 1 }}
+            >
+              <RadioButtonUncheckedIcon sx={{ mr: 1 }} /> 未完了
+            </ToggleButton>
+          </ToggleButtonGroup>
         </Box>
+
         <List
           sx={{
-            border: "1px solid #eee",
-            borderRadius: "8px",
-            overflow: "hidden",
+            p: 0,
           }}
         >
           {displayTodos.length === 0 ? (
-            <Typography variant="body1" sx={{ textAlign: "center", p: 2 }}>
-              該当するtodoがありません
-            </Typography>
+            <Paper sx={{ p: 3, textAlign: "center", mt: 2 }}>
+              <Typography variant="body1" color="text.secondary">
+                該当するtodoがありません
+              </Typography>
+            </Paper>
           ) : (
             displayTodos.map((todo) => (
-              <ListItem
-                key={todo.id}
-                sx={{
-                  borderBottom: "1px solid #eee",
-                  "&:last-child": { borderBottom: "none" },
-                  display: "flex",
-                  alignItems: "center",
-                  p: 1,
-                }}
-              >
-                <Checkbox
-                  onChange={() => handleChangeStatus(todo.id)}
-                  checked={todo.isComplete}
-                  color="primary"
-                />
-                <ListItemText
-                  primary={
+              <TodoItemPaper key={todo.id}>
+                <Grid
+                  container
+                  alignItems="center"
+                  justifyItems="center"
+                  spacing={1}
+                >
+                  <Grid size={1}>
+                    <Checkbox
+                      onChange={() => handleChangeStatus(todo.id)}
+                      checked={todo.isComplete}
+                      color="primary"
+                    />
+                  </Grid>
+                  <Grid size={8} sx={{ pl: 1 }}>
                     <Typography
                       variant="body1"
                       sx={{
                         textDecoration: todo.isComplete
                           ? "line-through"
                           : "none",
+                        color: todo.isComplete
+                          ? "text.secondary"
+                          : "text.primary",
                       }}
                     >
                       {todo.content}
                     </Typography>
-                  }
-                  secondary={
                     <Typography
                       variant="body2"
                       sx={{
                         color: "text.secondary",
+                        mt: 0.5,
                       }}
                     >
-                      期日：{" "}
+                      期日：
                       {todo.dueDate
                         ? new Date(todo.dueDate).toLocaleDateString()
-                        : " "}
+                        : "未設定"}{" "}
                     </Typography>
-                  }
-                />
-                <Box sx={{ ml: "auto" }}>
-                  <IconButton></IconButton>
-                  <IconButton onClick={() => handleSetEditTodo(todo.id)}>
-                    <EditIcon />
-                  </IconButton>
-                  <IconButton onClick={() => deleteTodo(todo.id)}>
-                    <DeleteIcon />
-                  </IconButton>
-                </Box>
-              </ListItem>
+                  </Grid>
+                  <Grid size={3} sx={{ textAlign: "right" }}>
+                    <IconButton
+                      onClick={() => handleSetEditTodo(todo.id)}
+                      aria-label="edit"
+                    >
+                      <EditIcon />
+                    </IconButton>
+                    <IconButton
+                      onClick={() => deleteTodo(todo.id)}
+                      aria-label="delete"
+                    >
+                      <DeleteIcon />
+                    </IconButton>
+                  </Grid>
+                </Grid>
+              </TodoItemPaper>
             ))
           )}
         </List>
 
         {editingId !== null && (
           <Dialog open={isEditModalOpen} onClose={handleEditModal}>
-            <DialogTitle>編集</DialogTitle>
-            <DialogContent>
-              <Box
-                component="form"
-                onSubmit={handleSubmitForEdit}
-                sx={{
-                  mt: 4,
-                  p: 2,
-                  border: "1px solid #ccc",
-                  borderRadius: "8px",
-                }}
-              >
-                <Typography variant="h6" gutterBottom>
-                  編集
-                </Typography>
+            <DialogTitle sx={{ textAlign: "center", pb: 1, pt: 3 }}>
+              <Typography variant="h6" component="div">
+                編集
+              </Typography>
+            </DialogTitle>
+            <Box component="form" onSubmit={handleSubmitForEdit}>
+              <DialogContent sx={{ pt: 1 }}>
                 <TextField
                   label="内容"
                   name="content"
@@ -400,77 +458,44 @@ function App() {
                   margin="normal"
                   slotProps={{ inputLabel: { shrink: true } }} //ラベルと初期表示が重なるため、ラベルを常時表示
                 />
-                <DialogActions>
-                  <Button
-                    type="submit"
-                    variant="contained"
-                    color="primary"
-                    sx={{ mt: 2, mr: 1 }}
-                  >
-                    保存
-                  </Button>
+                <DialogActions sx={{ justifyContent: "center", pb: 3, pt: 1 }}>
                   <Button
                     onClick={() => {
                       setEditingId(null);
                       setEditForm({ content: "", dueDate: null });
                     }}
                     variant="outlined"
-                    sx={{ mt: 2 }}
+                    color="primary"
                   >
                     キャンセル
                   </Button>
+
+                  <Button type="submit" variant="contained" color="primary">
+                    保存
+                  </Button>
                 </DialogActions>
-              </Box>
-            </DialogContent>
+              </DialogContent>
+            </Box>
           </Dialog>
-          // <Box
-          //   component="form"
-          //   onSubmit={(e) => handleSubmitForEdit(e, editingId)}
-          //   sx={{ mt: 4, p: 2, border: "1px solid #ccc", borderRadius: "8px" }}
-          // >
-          //   <Typography variant="h6" gutterBottom>
-          //     編集
-          //   </Typography>
-          //   <TextField
-          //     label="内容"
-          //     name="content"
-          //     value={editForm?.content}
-          //     onChange={(e) => handleChangeForm(e, editForm, setEditForm)}
-          //     fullWidth
-          //     margin="normal"
-          //     required
-          //   />
-          //   <TextField
-          //     label="締切"
-          //     type="date"
-          //     name="dueDate"
-          //     value={editForm.dueDate ? editForm.dueDate.slice(0, 10) : ""} //UTCの形式だとvalueに表示ができないため、Dateの部分だけを切り出す
-          //     onChange={(e) => handleChangeForm(e, editForm, setEditForm)}
-          //     fullWidth
-          //     margin="normal"
-          //     slotProps={{ inputLabel: { shrink: true } }} //ラベルと初期表示が重なるため、ラベルを常時表示
-          //   />
-          //   <Button
-          //     type="submit"
-          //     variant="contained"
-          //     color="primary"
-          //     sx={{ mt: 2, mr: 1 }}
-          //   >
-          //     保存
-          //   </Button>
-          //   <Button
-          //     onClick={() => {
-          //       setEditingId(null);
-          //       setEditForm({ content: "", dueDate: null });
-          //     }}
-          //     variant="outlined"
-          //     sx={{ mt: 2 }}
-          //   >
-          //     キャンセル
-          //   </Button>
-          // </Box>
         )}
       </Container>
+
+      <Button
+        onClick={handleAddModal}
+        variant="contained"
+        startIcon={<AddIcon />}
+        sx={{
+          position: "fixed",
+          bottom: 16,
+          right: 16,
+          zIndex: 1300,
+          borderRadius: "50px",
+          px: 3,
+          py: 1.5,
+        }}
+      >
+        新規登録
+      </Button>
     </Box>
   );
 }
