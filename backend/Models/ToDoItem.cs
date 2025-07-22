@@ -12,7 +12,7 @@ namespace backend.Models
             [MaxLength(100)]
             public string? Content { get; set; } = string.Empty;
 
-            public DateTime? DueDate { get; set; }
+            public DateTimeOffset? DueDate { get; set; }
 
             public bool IsComplete { get; set; } = false;
 
