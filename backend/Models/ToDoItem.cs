@@ -14,10 +14,9 @@ namespace backend.Models
 
             public DateTime? DueDate { get; set; }
 
-            public bool IsComplete { get; set; }
+            public bool IsComplete { get; set; } = false;
 
             public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-
 
             public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
         }    
