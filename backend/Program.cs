@@ -4,6 +4,9 @@ using NSwag.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+Console.WriteLine($"[DEBUG] DefaultConnection = {connectionString ?? "NULL"}");
+
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(
