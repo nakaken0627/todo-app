@@ -31,6 +31,29 @@ builder.Services.AddOpenApiDocument(options =>
 
 var app = builder.Build();
 
+using (var scope = app.Services.CreateScope())
+{
+    var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    // 保留中のマイグレーションがある場合のみ実行
+    if (dbContext.Database.GetPendingMigrations().Any())
+    {
+        try
+        {
+            Console.WriteLine("Applying database migrations...");
+            dbContext.Database.Migrate(); // マイグレーションを実行
+            Console.WriteLine("Database migrations applied successfully.");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error applying migrations: {ex.Message}");
+        }
+    }
+    else
+    {
+        Console.WriteLine("No pending database migrations found.");
+    }
+}
+
 app.UseCors();
 
 // Swagger/OpenAPIなどのミドルウェアを開発環境でのみ有効化
