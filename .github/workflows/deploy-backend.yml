@@ -13,20 +13,20 @@ jobs:
 
     steps:
       # Checkout the repo
-      - uses: actions/checkout@main
+      - uses: actions/checkout@v4
       
       # Setup .NET Core SDK
       - name: Setup .NET Core
-        uses: actions/setup-dotnet@v3
+        uses: actions/setup-dotnet@v4
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }} 
       
       # Run dotnet build and publish
       - name: dotnet build and publish
         run: |
-          dotnet restore　${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
-          dotnet build ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}　--configuration Release
-          dotnet publish ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}　-c Release --property:PublishDir='${{ github.workspace }}/published_app' 
+          dotnet restore ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
+          dotnet build ${{ env.AZURE_WEBAPP_PACKAGE_PATH }} --configuration Release
+          dotnet publish ${{ env.AZURE_WEBAPP_PACKAGE_PATH }} -c Release --property:PublishDir='${{ github.workspace }}/published_app' 
           
       # Deploy to Azure Web apps
       - name: 'Run Azure webapp deploy action using publish profile credentials'
