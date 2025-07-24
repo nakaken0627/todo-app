@@ -40,6 +40,9 @@ type TodoForm = {
 };
 type FilterStatus = "all" | "completed" | "uncompleted";
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+console.log("API_BASE_URL:", API_BASE_URL);
+
 function App() {
   const [displayTodos, setDisplayTodos] = useState<Todo[]>([]);
   const [addForm, setAddForm] = useState<TodoForm>({
@@ -95,7 +98,7 @@ function App() {
           : "";
 
       const response = await fetch(
-        `https://localhost:7027/api/todo-items${isCompleteParam}`,
+        `${API_BASE_URL}/api/todo-items${isCompleteParam}`,
         {
           method: "GET",
           headers: {
@@ -117,7 +120,7 @@ function App() {
   }, [fetchTodos]);
 
   const addTodo = async (todo: TodoForm) => {
-    const response = await fetch("https://localhost:7027/api/todo-items", {
+    const response = await fetch(`${API_BASE_URL}/api/todo-items`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -147,19 +150,16 @@ function App() {
     const getTodo = findTodo(id);
     if (!getTodo) return;
 
-    const response = await fetch(
-      `https://localhost:7027/api/todo-items/${id}`,
-      {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          ...getTodo,
-          isComplete: !getTodo.isComplete,
-        }),
-      }
-    );
+    const response = await fetch(`${API_BASE_URL}/api/todo-items/${id}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        ...getTodo,
+        isComplete: !getTodo.isComplete,
+      }),
+    });
     const data = await response.json();
     setDisplayTodos((prev) =>
       prev.map((todo) => (todo.id === id ? data : todo))
@@ -175,16 +175,13 @@ function App() {
   };
 
   const editTodo = async (id: number) => {
-    const response = await fetch(
-      `https://localhost:7027/api/todo-items/${id}`,
-      {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(editForm),
-      }
-    );
+    const response = await fetch(`${API_BASE_URL}/api/todo-items/${id}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(editForm),
+    });
     const data = await response.json();
     setDisplayTodos((prev) =>
       prev.map((todo) => (todo.id === id ? data : todo))
@@ -201,15 +198,12 @@ function App() {
   };
 
   const deleteTodo = async (id: number) => {
-    const response = await fetch(
-      `https://localhost:7027/api/todo-items/${id}`,
-      {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      }
-    );
+    const response = await fetch(`${API_BASE_URL}/api/todo-items/${id}`, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
     if (!response.ok) {
       throw new Error("network error");
     } else {
