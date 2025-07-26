@@ -19,7 +19,7 @@ public class TodoItemsController : ControllerBase
     _context = context;
   }
 
-  // Todoのデータを条件に応じて取得するエンドポイント（全件/完了/未完）
+  // Todoのデータを条件に応じてデータ取得するエンドポイント（全件/完了/未完）
   // クエリパラメータ isComplete を使用して、ステータスに合わせてフィルタリング可能
   [HttpGet]
   public async Task<ActionResult<IEnumerable<TodoItem>>> GetTodoItems([FromQuery] bool? isComplete = null)
@@ -47,16 +47,14 @@ public class TodoItemsController : ControllerBase
   [HttpPost]
   public async Task<ActionResult<TodoItem>> PostTodoItem([FromBody] TodoItem todoItem)
   {
-  Console.WriteLine("PostTodoItem: " + todoItem);
-    if (!ModelState.IsValid) return BadRequest(ModelState);
+    if (!ModelState.IsValid) return BadRequest(ModelState); // モデルのバリデーションチェックを行い、無効な場合はBadRequestを返す
     _context.TodoItems.Add(todoItem);
     await _context.SaveChangesAsync();
-    return CreatedAtAction(nameof(GetTodoItem), new { id = todoItem.Id }, todoItem);
+    return CreatedAtAction(nameof(GetTodoItem), new { id = todoItem.Id }, todoItem); 
   }
 
   //　Todoアイテムを更新する際にアイテムの存在を確認し、エラーハンドリングを分岐させるために必要
   private bool TodoItemExists(int id) { return _context.TodoItems.Any(e => e.Id == id); }
-
 
   // Todoアイテムを更新し、最新版のデータを返すエンドポイント
   // コンフリクト発生時はエラーハンドリンで対応可能
@@ -64,7 +62,7 @@ public class TodoItemsController : ControllerBase
   public async Task<IActionResult> PutTodoItem(int id, [FromBody] TodoItem todoItem)
   {
     if (id != todoItem.Id || !ModelState.IsValid) return BadRequest();
-    _context.Entry(todoItem).State = EntityState.Modified;
+    _context.Entry(todoItem).State = EntityState.Modified; // DB更新の際にEntryでtodoItemの追跡対象を捕捉して、そのステータスをModifiedに設定することで更新対象を明示する
     try
     {
       await _context.SaveChangesAsync();
