@@ -6,21 +6,15 @@ namespace backend.Data;
 
 public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : DbContext(options)
 {
-    public DbSet<TodoItem> TodoItems { get; set; } = null!;
+    public DbSet<TodoItem> TodoItems { get; set; } = null!; // TodoItemsテーブルにアクセスするために必要
 
-    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    protected override void OnModelCreating(ModelBuilder modelBuilder) //データベースの構造を定義するメソッド
     {
         base.OnModelCreating(modelBuilder);
 
         modelBuilder.Entity<TodoItem>()
         .Property(t => t.CreatedAt)
         .HasDefaultValueSql("NOW()");
-    }
-
-    public override int SaveChanges()
-    {
-        UpdateTimestamps();
-        return base.SaveChanges();
     }
 
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
