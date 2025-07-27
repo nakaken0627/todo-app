@@ -47,7 +47,20 @@
   - MUI (Material-UI)
   - GitHub Actions
 
-## 4. UI で工夫したこと
+## 4. システム構成図
+
+<img src="assets/todo_app_system_structure.png">
+
+<br/>
+
+**構成のポイント** :
+
+- **Azure Static Web App** :フロントエンド（React ＋ TypeScript）のプロジェクトをビルドした後に生成される静的ファイルを配信するために利用。
+- **Azure App Services** :C# + ASP.NET Core で構築したバックエンド API を常時稼働させるために 採用しました。
+- **Azure Database for PostgreSQL** :アプリケーションの永続データを扱うためにを採用しました。
+- **Github Actions** :開発から本番環境へのデプロイを自動化し、CI/CD パイプラインを構築するために 採用しました。
+
+## 5. UI で工夫したこと
 
 ユーザーが直感的に操作でき、快適に利用できる Todo アプリケーションを目指し、以下の点を工夫しました。
 
