@@ -57,12 +57,14 @@ export const TodoItem = ({
             color="primary"
           />
         </Grid>
+
         <Grid size={8} sx={{ pl: 1 }}>
           <Typography
             variant="body1"
             sx={{
               textDecoration: todo.isComplete ? "line-through" : "none",
               color: todo.isComplete ? "text.secondary" : "text.primary",
+              overflowX: "auto",
             }}
           >
             {todo.content}
@@ -80,6 +82,7 @@ export const TodoItem = ({
               : "未設定"}{" "}
           </Typography>
         </Grid>
+
         <Grid size={3} sx={{ textAlign: "right" }}>
           <IconButton
             onClick={() => handleSetEditTodo(todo.id)}
