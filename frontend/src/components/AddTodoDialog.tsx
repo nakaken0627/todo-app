@@ -12,7 +12,11 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import { API_BASE_URL, handleChangeForm } from "../hooks/useTodo";
+import {
+  API_BASE_URL,
+  handleChangeForm,
+  validateContent,
+} from "../hooks/useTodo";
 
 type Props = {
   open: boolean;
@@ -32,8 +36,15 @@ export const AddTodoDialog = ({
     dueDate: null,
   });
   const [isContinueAdd, setIsContinueAdd] = useState<boolean>(false);
+  const [contentError, setContentError] = useState<string | null>(null);
 
   const addTodo = async (todo: TodoForm) => {
+    const error = validateContent(todo.content);
+    if (error) {
+      setContentError(error);
+      return;
+    }
+
     const response = await fetch(`${API_BASE_URL}/api/todo-items`, {
       method: "POST",
       headers: {
@@ -46,8 +57,8 @@ export const AddTodoDialog = ({
     }
     const data: Todo = await response.json();
     setDisplayTodos((prev) => [...prev, data]);
-
     setAddForm({ content: "", dueDate: null });
+    setContentError(null);
   };
 
   const handleSubmitForAdd = (e: React.FormEvent<HTMLFormElement>) => {
@@ -63,17 +74,24 @@ export const AddTodoDialog = ({
           新規登録
         </Typography>
       </DialogTitle>
+
       <Box component="form" onSubmit={handleSubmitForAdd}>
         <DialogContent sx={{ pt: 1 }}>
           <TextField
             label="内容"
             name="content"
             value={addForm.content}
-            onChange={(e) => handleChangeForm(e, addForm, setAddForm)}
+            onChange={(e) => {
+              handleChangeForm(e, addForm, setAddForm);
+              setContentError(validateContent(e.target.value));
+            }}
             fullWidth
             margin="normal"
             required
+            error={!!contentError}
+            helperText={contentError}
           />
+
           <TextField
             label="期日"
             type="date"
@@ -84,6 +102,7 @@ export const AddTodoDialog = ({
             margin="normal"
             slotProps={{ inputLabel: { shrink: true } }} //ラベルと初期表示が重なるため、ラベルを常時表示
           />
+
           <Box
             sx={{
               display: "flex",
@@ -113,7 +132,12 @@ export const AddTodoDialog = ({
               >
                 キャンセル
               </Button>
-              <Button type="submit" variant="contained" color="primary">
+              <Button
+                type="submit"
+                variant="contained"
+                color="primary"
+                disabled={!!contentError}
+              >
                 登録
               </Button>
             </DialogActions>

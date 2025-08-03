@@ -8,8 +8,13 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import { API_BASE_URL, handleChangeForm } from "../hooks/useTodo";
+import {
+  API_BASE_URL,
+  handleChangeForm,
+  validateContent,
+} from "../hooks/useTodo";
 import type { Todo, TodoForm } from "../types/todo";
+import { useState } from "react";
 
 type Props = {
   open: boolean;
@@ -34,7 +39,15 @@ export const EditTodoDialog = ({
   editForm,
   setEditForm,
 }: Props) => {
+  const [contentError, setContentError] = useState<string | null>(null);
+
   const editTodo = async (id: number) => {
+    const error = validateContent(editForm.content);
+    if (error) {
+      setContentError(error);
+      return;
+    }
+
     const response = await fetch(`${API_BASE_URL}/api/todo-items/${id}`, {
       method: "PUT",
       headers: {
@@ -55,6 +68,7 @@ export const EditTodoDialog = ({
     setEditingId(null);
     setEditForm({ content: "", dueDate: null });
     setIsEditModalOpen(false);
+    setContentError(null);
   };
 
   return (
@@ -70,11 +84,17 @@ export const EditTodoDialog = ({
             label="内容"
             name="content"
             value={editForm?.content}
-            onChange={(e) => handleChangeForm(e, editForm, setEditForm)}
+            onChange={(e) => {
+              handleChangeForm(e, editForm, setEditForm);
+              setContentError(validateContent(e.target.value));
+            }}
             fullWidth
             margin="normal"
             required
+            error={!!contentError}
+            helperText={contentError}
           />
+
           <TextField
             label="締切"
             type="date"
@@ -85,6 +105,7 @@ export const EditTodoDialog = ({
             margin="normal"
             slotProps={{ inputLabel: { shrink: true } }} //ラベルと初期表示が重なるため、ラベルを常時表示
           />
+
           <DialogActions sx={{ justifyContent: "center", pb: 3, pt: 1 }}>
             <Button
               onClick={() => {
@@ -97,7 +118,12 @@ export const EditTodoDialog = ({
               キャンセル
             </Button>
 
-            <Button type="submit" variant="contained" color="primary">
+            <Button
+              type="submit"
+              variant="contained"
+              color="primary"
+              disabled={!!contentError}
+            >
               保存
             </Button>
           </DialogActions>
