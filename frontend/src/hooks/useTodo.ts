@@ -28,3 +28,13 @@ export const handleChangeForm = (
     });
   }
 };
+
+export const validateContent = (inputContent: string) => {
+  if (!inputContent) {
+    return "内容を入力してください";
+  }
+  if (inputContent.length > 100) {
+    return "100文字以内で入力してください";
+  }
+  return null;
+};
